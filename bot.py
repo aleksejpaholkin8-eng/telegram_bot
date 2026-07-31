@@ -18,9 +18,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не найден! Добавьте его в переменные окружения.")
 
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-if not DEEPSEEK_API_KEY:
-    raise ValueError("DEEPSEEK_API_KEY не найден! Добавьте его в переменные окружения.")
+DEEPSEEK_API_KEY = "sk-ваш_ключ"  # вставьте ваш реальный ключ
 
 # --- Создаём клиент DeepSeek (через OpenAI SDK) ---
 # DeepSeek API полностью совместим с OpenAI API, поэтому мы используем ту же библиотеку,
