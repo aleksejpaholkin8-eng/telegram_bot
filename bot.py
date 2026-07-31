@@ -18,6 +18,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 if not BOT_TOKEN:
+     # Временный дебаг (потом можно убрать)
+    print("Доступные переменные:")
+    for k, v in os.environ.items():
+        if any(x in k.upper() for x in ["BOT", "GROQ", "KEY", "TOKEN", "API"]):
+            print(k, "=", v[:20] + "..." if v and len(v) > 20 else v)
     raise ValueError("BOT_TOKEN не найден!")
 if not GROQ_API_KEY:
     # Временный дебаг (потом можно убрать)
