@@ -1,59 +1,57 @@
-# bot.py — бот с интеграцией Groq (бесплатно, до 14 400 запросов/день)
 import asyncio
 import os
 import logging
-from dotenv import load_dotenv
+import sys
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from openai import OpenAI  # Groq API полностью совместим с OpenAI SDK
+from openai import OpenAI
 
-# Загружаем переменные из .env (для локального запуска)
-load_dotenv()
+# Принудительно UTF-8 (очень помогает на многих хостингах)
+os.environ["PYTHONIOENCODING"] = "utf-8"
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 
-# Включаем логирование
 logging.basicConfig(level=logging.INFO)
 
-# --- Читаем переменные окружения ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
 if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN не найден! Добавьте его в переменные окружения.")
+    raise ValueError("BOT_TOKEN не найден!")
+if not GROQ_API_KEY:
+    # Временный дебаг (потом можно убрать)
+    print("Доступные переменные:")
+    for k, v in os.environ.items():
+        if any(x in k.upper() for x in ["BOT", "GROQ", "KEY", "TOKEN", "API"]):
+            print(k, "=", v[:20] + "..." if v and len(v) > 20 else v)
+    raise ValueError("GROQ_API_KEY не найден!")
 
-GROQ_API_KEY = "gsk-ваш_ключ"  # вставьте ваш реальный ключ
-
-# --- Создаём клиент Groq (через OpenAI SDK) ---
-# Groq использует тот же формат запросов, что и OpenAI,
-# но с другим base_url и своим API-ключом
+# Создаём клиент
 groq_client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1"  # Адрес API Groq[reference:10]
+    api_key=GROQ_API_KEY.strip(),  # .strip() убирает случайные пробелы/переносы
+    base_url="https://api.groq.com/openai/v1"
 )
 
-# Системный промпт — задаёт поведение бота
 SYSTEM_PROMPT = "Ты — полезный, дружелюбный и умный ассистент. Отвечай кратко, ясно и по делу на русском языке."
 
-# --- Основная функция бота ---
 async def main():
     bot = Bot(token=BOT_TOKEN)
     dp = Dispatcher()
 
     @dp.message(Command("start"))
     async def cmd_start(message: types.Message):
-        await message.answer(
-            "Привет! Я умный бот на базе Groq. Задай мне любой вопрос, и я постараюсь ответить."
-        )
+        await message.answer("Привет! Я бот на Groq. Задай вопрос.")
 
     @dp.message()
     async def handle_message(message: types.Message):
         if not message.text:
-            await message.answer("Пожалуйста, отправьте текстовое сообщение.")
+            await message.answer("Пришли текстовое сообщение.")
             return
 
-        waiting_msg = await message.answer("🤔 Думаю...")
+        waiting_msg = await message.answer("Думаю...")
 
         try:
-            # --- Запрос к Groq API ---
-            # Используем модель llama-3.3-70b-versatile — быстрая и бесплатная[reference:11]
-            # Можно заменить на "mixtral-8x7b-32768" или "gemma2-9b-it"
             response = groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
@@ -65,22 +63,16 @@ async def main():
             )
 
             answer = response.choices[0].message.content.strip()
-
             await waiting_msg.delete()
             await message.answer(answer)
 
         except Exception as e:
             await waiting_msg.delete()
-            await message.answer(f"❌ Произошла ошибка при обращении к Groq: {e}")
+            await message.answer(f"Ошибка Groq: {type(e).__name__}: {e}")
+            logging.exception("Ошибка при запросе к Groq")
 
-    logging.info("Бот запускается и ждёт сообщения...")
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logging.info("Бот остановлен вручную")
-    except Exception as e:
-        logging.error(f"Ошибка: {e}")
+    asyncio.run(main())
