@@ -17,20 +17,32 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-if not BOT_TOKEN:
-     # Временный дебаг (потом можно убрать)
-    print("Доступные переменные:")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+def debug_env():
+    """Временная функция для отладки переменных окружения"""
+    print("\n=== DEBUG: Переменные окружения ===")
+    found = False
     for k, v in os.environ.items():
         if any(x in k.upper() for x in ["BOT", "GROQ", "KEY", "TOKEN", "API"]):
-            print(k, "=", v[:20] + "..." if v and len(v) > 20 else v)
-    raise ValueError("BOT_TOKEN не найден!")
-if not GROQ_API_KEY:
-    # Временный дебаг (потом можно убрать)
-    print("Доступные переменные:")
-    for k, v in os.environ.items():
-        if any(x in k.upper() for x in ["BOT", "GROQ", "KEY", "TOKEN", "API"]):
-            print(k, "=", v[:20] + "..." if v and len(v) > 20 else v)
-    raise ValueError("GROQ_API_KEY не найден!")
+            # Показываем только начало значения, чтобы не светить полные ключи в логах
+            masked = v[:12] + "..." + v[-4:] if v and len(v) > 20 else v
+            print(f"{k} = {masked}")
+            found = True
+    if not found:
+        print("Не найдено ни одной переменной с BOT / GROQ / KEY / TOKEN / API")
+    print("====================================\n")
+
+
+if not BOT_TOKEN or not GROQ_API_KEY:
+    debug_env()  # Покажет, что реально видит программа
+    missing = []
+    if not BOT_TOKEN:
+        missing.append("BOT_TOKEN")
+    if not GROQ_API_KEY:
+        missing.append("GROQ_API_KEY")
+    raise ValueError(f"Не найдены переменные: {', '.join(missing)}")
 
 # Создаём клиент
 groq_client = OpenAI(
