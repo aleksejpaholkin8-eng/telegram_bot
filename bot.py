@@ -18,9 +18,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не найден! Добавьте его в переменные окружения.")
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise ValueError("GROQ_API_KEY не найден! Добавьте его в переменные окружения.")
+GROQ_API_KEY = "gsk-ваш_ключ"  # вставьте ваш реальный ключ
 
 # --- Создаём клиент Groq (через OpenAI SDK) ---
 # Groq использует тот же формат запросов, что и OpenAI,
